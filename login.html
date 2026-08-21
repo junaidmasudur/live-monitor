@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Live Monitor - Login</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+}
+
+.login-box {
+    width: 360px;
+    max-width: 92%;
+    background: white;
+    padding: 32px;
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.12);
+}
+
+.logo {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    background: #2563eb;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+h1 {
+    text-align: center;
+    margin: 0 0 8px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+
+label {
+    display: block;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus {
+    border-color: #2563eb;
+}
+
+button {
+    width: 100%;
+    margin-top: 22px;
+    padding: 14px;
+    border: 0;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+#error {
+    color: #dc2626;
+    text-align: center;
+    margin-top: 15px;
+    min-height: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <div class="logo">LM</div>
+
+    <h1>Live Monitor</h1>
+
+    <div class="subtitle">
+        Sign in to continue
+    </div>
+
+    <form id="loginForm">
+
+        <label for="userId">
+            User ID
+        </label>
+
+        <input
+            id="userId"
+            type="text"
+            autocomplete="username"
+            placeholder="Enter ID"
+            required
+        >
+
+        <label for="password">
+            Password
+        </label>
+
+        <input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter password"
+            required
+        >
+
+        <button type="submit">
+            LOGIN
+        </button>
+
+    </form>
+
+    <div id="error"></div>
+
+</div>
+
+<script>
+
+document
+.getElementById("loginForm")
+.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+    const id =
+        document
+        .getElementById("userId")
+        .value
+        .trim();
+
+    const password =
+        document
+        .getElementById("password")
+        .value;
+
+    const error =
+        document.getElementById("error");
+
+    error.textContent = "";
+
+    if (!id || !password) {
+        error.textContent =
+            "Enter ID and password.";
+        return;
+    }
+
+    /*
+     * ADMIN LOGIN
+     *
+     * ID: ad
+     * Password: ad
+     */
+
+    if (id === "ad" && password === "ad") {
+
+        sessionStorage.setItem(
+            "loginRole",
+            "admin"
+        );
+
+        sessionStorage.setItem(
+            "loginId",
+            "ad"
+        );
+
+        window.location.href =
+            "admin.html";
+
+        return;
+    }
+
+    /*
+     * ANY OTHER ID/PASSWORD
+     * GOES TO USER PANEL.
+     */
+
+    sessionStorage.setItem(
+        "loginRole",
+        "user"
+    );
+
+    sessionStorage.setItem(
+        "loginId",
+        id
+    );
+
+    window.location.href =
+        "user.html";
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>User - Live Monitor</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    color: #111827;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 16px 20px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+}
+
+.status-dot.online {
+    background: #22c55e;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.07);
+}
+
+h2 {
+    margin-top: 0;
+}
+
+.camera-box {
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    width: 100%;
+    min-height: 250px;
+}
+
+video {
+    width: 100%;
+    max-height: 550px;
+    display: block;
+    background: #000;
+    object-fit: contain;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 12px;
+    margin-top: 15px;
+}
+
+button {
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.camera {
+    background: #2563eb;
+}
+
+.camera:hover {
+    background: #1d4ed8;
+}
+
+.screen {
+    background: #7c3aed;
+}
+
+.screen:hover {
+    background: #6d28d9;
+}
+
+.stop {
+    background: #dc2626;
+}
+
+.stop:hover {
+    background: #b91c1c;
+}
+
+.logout {
+    background: #374151;
+    width: auto;
+    padding: 9px 15px;
+    margin: 0;
+}
+
+.info {
+    padding: 13px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1e40af;
+    line-height: 1.5;
+}
+
+.warning {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(180px, 1fr));
+
+    gap: 10px;
+}
+
+.status-card {
+    padding: 15px;
+    border-radius: 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.status-card strong {
+    display: block;
+    margin-bottom: 7px;
+}
+
+.on {
+    color: #16a34a;
+    font-weight: bold;
+}
+
+.off {
+    color: #6b7280;
+    font-weight: bold;
+}
+
+#message {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 9px;
+    display: none;
+}
+
+.message-ok {
+    display: block !important;
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.message-error {
+    display: block !important;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+@media(max-width:600px) {
+
+    header {
+        padding: 13px;
+    }
+
+    .container {
+        padding: 12px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="header-title">
+        User Panel
+    </div>
+
+    <div style="display:flex;align-items:center;gap:15px;">
+
+        <div class="status">
+            <span
+                id="statusDot"
+                class="status-dot"
+            ></span>
+
+            <span id="firebaseStatus">
+                Connecting...
+            </span>
+        </div>
+
+        <button
+            class="logout"
+            onclick="logout()"
+        >
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>
+            User: <span id="userName"></span>
+        </h2>
+
+        <div class="info">
+            Camera and microphone are only shared
+            after you explicitly allow them.
+            Screen sharing requires you to select
+            a screen/window/tab in the browser dialog.
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>
+            My Camera
+        </h2>
+
+        <div class="camera-box">
+
+            <video
+                id="localVideo"
+                autoplay
+                playsinline
+                muted
+            ></video>
+
+        </div>
+
+        <div class="buttons">
+
+            <button
+                id="cameraButton"
+                class="camera"
+                onclick="toggleCamera()"
+            >
+                ALLOW CAMERA + MICROPHONE
+            </button>
+
+            <button
+                id="screenButton"
+                class="screen"
+                onclick="toggleScreen()"
+            >
+                SHARE SCREEN
+            </button>
+
+        </div>
+
+        <div id="message"></div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>
+            Sharing Status
+        </h2>
+
+        <div class="status-grid">
+
+            <div class="status-card">
+
+                <strong>
+                    Camera
+                </strong>
+
+                <span
+                    id="cameraStatus"
+                    class="off"
+                >
+                    OFF
+                </span>
+
+            </div>
+
+            <div class="status-card">
+
+                <strong>
+                    Microphone
+                </strong>
+
+                <span
+                    id="microphoneStatus"
+                    class="off"
+                >
+                    OFF
+                </span>
+
+            </div>
+
+            <div class="status-card">
+
+                <strong>
+                    Screen
+                </strong>
+
+                <span
+                    id="screenStatus"
+                    class="off"
+                >
+                    OFF
+                </span>
+
+            </div>
+
+            <div class="status-card">
+
+                <strong>
+                    Admin connection
+                </strong>
+
+                <span
+                    id="connectionStatus"
+                    class="off"
+                >
+                    DISCONNECTED
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-database-compat.js"></script>
+
+<script>
+
+/* =========================================================
+   FIREBASE CONFIG
+   ========================================================= */
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyA9-l3QMx1Z-wul199k1OwPKwXGdtMaoBw",
+
+    authDomain:
+        "live-monitor-e6911.firebaseapp.com",
+
+    databaseURL:
+        "https://live-monitor-e6911-default-rtdb.firebaseio.com",
+
+    projectId:
+        "live-monitor-e6911",
+
+    storageBucket:
+        "live-monitor-e6911.firebasestorage.app",
+
+    messagingSenderId:
+        "216149537073",
+
+    appId:
+        "1:216149537073:web:a608e4f0391d22e6c78010"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db =
+    firebase.database();
+
+/* =========================================================
+   USER
+   ========================================================= */
+
+const userId =
+    sessionStorage.getItem("loginId");
+
+if (
+    sessionStorage.getItem("loginRole") !== "user" ||
+    !userId
+) {
+    window.location.href = "login.html";
+}
+
+document.getElementById("userName").textContent =
+    userId;
+
+/* =========================================================
+   REFERENCES
+   ========================================================= */
+
+const userRef =
+    db.ref("users/" + encodeURIComponent(userId));
+
+const sessionRef =
+    db.ref("sessions/" + encodeURIComponent(userId));
+
+/* =========================================================
+   VARIABLES
+   ========================================================= */
+
+let localStream = null;
+let screenStream = null;
+
+let peerConnections = {};
+
+let currentRequestId = null;
+
+let firebaseOnline = false;
+
+/* =========================================================
+   FIREBASE CONNECTION
+   ========================================================= */
+
+db.ref(".info/connected")
+.on("value", snapshot => {
+
+    firebaseOnline =
+        snapshot.val() === true;
+
+    document.getElementById(
+        "firebaseStatus"
+    ).textContent =
+        firebaseOnline
+            ? "Firebase Connected"
+            : "Firebase Offline";
+
+    document.getElementById(
+        "statusDot"
+    ).className =
+        firebaseOnline
+            ? "status-dot online"
+            : "status-dot";
+
+});
+
+/* =========================================================
+   PRESENCE
+   ========================================================= */
+
+function initializePresence() {
+
+    userRef.update({
+
+        id: userId,
+
+        online: true,
+
+        camera: false,
+
+        microphone: false,
+
+        screen: false,
+
+        connected: false,
+
+        lastSeen:
+            firebase.database.ServerValue.TIMESTAMP
+
+    });
+
+    userRef.onDisconnect().update({
+
+        online: false,
+
+        camera: false,
+
+        microphone: false,
+
+        screen: false,
+
+        connected: false,
+
+        lastSeen:
+            firebase.database.ServerValue.TIMESTAMP
+
+    });
+
+}
+
+initializePresence();
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+function showMessage(text, error = false) {
+
+    const box =
+        document.getElementById("message");
+
+    box.textContent = text;
+
+    box.className =
+        error
+            ? "message-error"
+            : "message-ok";
+
+}
+
+/* =========================================================
+   LOCAL CAMERA + MICROPHONE
+   ========================================================= */
+
+async function toggleCamera() {
+
+    if (localStream) {
+
+        stopCamera();
+
+        return;
+    }
+
+    try {
+
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+            throw new Error(
+                "Camera/microphone requires HTTPS or localhost."
+            );
+        }
+
+        /*
+         * IMPORTANT:
+         * This is executed from the user's button click.
+         */
+
+        localStream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+                    facingMode: "user",
+                    width: {
+                        ideal: 1280
+                    },
+                    height: {
+                        ideal: 720
+                    }
+                },
+
+                audio: true
+
+            });
+
+        const video =
+            document.getElementById("localVideo");
+
+        video.srcObject =
+            localStream;
+
+        await video.play().catch(() => {});
+
+        const camera =
+            localStream
+            .getVideoTracks()
+            .length > 0;
+
+        const microphone =
+            localStream
+            .getAudioTracks()
+            .length > 0;
+
+        await userRef.update({
+
+            camera: camera,
+
+            microphone: microphone,
+
+            online: true
+
+        });
+
+        updateUserStatus();
+
+        showMessage(
+            "Camera and microphone are enabled. Admin can now request the live stream."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Camera/microphone permission failed: " +
+            error.message,
+            true
+        );
+    }
+}
+
+/* =========================================================
+   STOP CAMERA
+   ========================================================= */
+
+async function stopCamera() {
+
+    if (localStream) {
+
+        localStream
+        .getTracks()
+        .forEach(track => {
+
+            track.stop();
+
+        });
+
+        localStream = null;
+    }
+
+    const video =
+        document.getElementById("localVideo");
+
+    video.srcObject = null;
+
+    await userRef.update({
+
+        camera: false,
+
+        microphone: false,
+
+        connected: false
+
+    });
+
+    updateUserStatus();
+
+    showMessage(
+        "Camera and microphone stopped."
+    );
+
+}
+
+/* =========================================================
+   SCREEN SHARE
+   ========================================================= */
+
+async function toggleScreen() {
+
+    if (screenStream) {
+
+        stopScreen();
+
+        return;
+    }
+
+    try {
+
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getDisplayMedia
+        ) {
+            throw new Error(
+                "Screen sharing is not supported by this browser."
+            );
+        }
+
+        /*
+         * MUST be called from user interaction.
+         */
+
+        screenStream =
+            await navigator.mediaDevices.getDisplayMedia({
+
+                video: true,
+
+                audio: false
+
+            });
+
+        await userRef.update({
+
+            screen: true
+
+        });
+
+        /*
+         * If the browser stops sharing from its own
+         * "Stop sharing" control.
+         */
+
+        const track =
+            screenStream
+            .getVideoTracks()[0];
+
+        if (track) {
+
+            track.onended = () => {
+
+                stopScreen();
+
+            };
+
+        }
+
+        updateUserStatus();
+
+        showMessage(
+            "Screen sharing is enabled. Admin can now request it."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Screen sharing was cancelled or failed: " +
+            error.message,
+            true
+        );
+
+    }
+
+}
+
+/* =========================================================
+   STOP SCREEN
+   ========================================================= */
+
+async function stopScreen() {
+
+    if (screenStream) {
+
+        screenStream
+        .getTracks()
+        .forEach(track => {
+
+            track.stop();
+
+        });
+
+        screenStream = null;
+    }
+
+    await userRef.update({
+
+        screen: false
+
+    });
+
+    updateUserStatus();
+
+    showMessage(
+        "Screen sharing stopped."
+    );
+
+}
+
+/* =========================================================
+   STATUS UI
+   ========================================================= */
+
+function setStatus(id, enabled, onText, offText) {
+
+    const element =
+        document.getElementById(id);
+
+    element.textContent =
+        enabled
+            ? onText
+            : offText;
+
+    element.className =
+        enabled
+            ? "on"
+            : "off";
+}
+
+function updateUserStatus() {
+
+    const camera =
+        localStream &&
+        localStream
+        .getVideoTracks()
+        .length > 0;
+
+    const microphone =
+        localStream &&
+        localStream
+        .getAudioTracks()
+        .length > 0;
+
+    const screen =
+        screenStream &&
+        screenStream
+        .getVideoTracks()
+        .length > 0;
+
+    setStatus(
+        "cameraStatus",
+        !!camera,
+        "ON",
+        "OFF"
+    );
+
+    setStatus(
+        "microphoneStatus",
+        !!microphone,
+        "ON",
+        "OFF"
+    );
+
+    setStatus(
+        "screenStatus",
+        !!screen,
+        "ON",
+        "OFF"
+    );
+
+    document.getElementById(
+        "cameraButton"
+    ).textContent =
+        localStream
+            ? "STOP CAMERA + MICROPHONE"
+            : "ALLOW CAMERA + MICROPHONE";
+
+    document.getElementById(
+        "cameraButton"
+    ).className =
+        localStream
+            ? "stop"
+            : "camera";
+
+    document.getElementById(
+        "screenButton"
+    ).textContent =
+        screenStream
+            ? "STOP SCREEN SHARING"
+            : "SHARE SCREEN";
+
+    document.getElementById(
+        "screenButton"
+    ).className =
+        screenStream
+            ? "stop"
+            : "screen";
+}
+
+/* =========================================================
+   WEBRTC CONFIG
+   ========================================================= */
+
+const rtcConfig = {
+
+    iceServers: [
+
+        {
+            urls:
+                "stun:stun.l.google.com:19302"
+        },
+
+        {
+            urls:
+                "stun:stun1.l.google.com:19302"
+        }
+
+    ]
+
+};
+
+/* =========================================================
+   LISTEN FOR ADMIN REQUEST
+   ========================================================= */
+
+sessionRef.on("value", async snapshot => {
+
+    const data =
+        snapshot.val();
+
+    if (!data) {
+        return;
+    }
+
+    const requestId =
+        data.requestId;
+
+    const offer =
+        data.offer;
+
+    const mode =
+        data.mode;
+
+    if (
+        !requestId ||
+        !offer ||
+        !mode
+    ) {
+        return;
+    }
+
+    /*
+     * Prevent processing the same request repeatedly.
+     */
+
+    if (
+        currentRequestId === requestId
+    ) {
+        return;
+    }
+
+    /*
+     * CAMERA/MIC requires user permission.
+     */
+
+    if (mode === "camera") {
+
+        if (!localStream) {
+
+            await sessionRef.update({
+
+                error:
+                    "User has not enabled camera and microphone."
+
+            });
+
+            return;
+        }
+
+    }
+
+    /*
+     * SCREEN requires user permission.
+     */
+
+    if (mode === "screen") {
+
+        if (!screenStream) {
+
+            await sessionRef.update({
+
+                error:
+                    "User has not enabled screen sharing."
+
+            });
+
+            return;
+        }
+
+    }
+
+    currentRequestId =
+        requestId;
+
+    await answerAdmin(
+        requestId,
+        offer,
+        mode
+    );
+
+});
+
+/* =========================================================
+   ANSWER ADMIN
+   ========================================================= */
+
+async function answerAdmin(
+    requestId,
+    offer,
+    mode
+) {
+
+    try {
+
+        const pc =
+            new RTCPeerConnection(
+                rtcConfig
+            );
+
+        peerConnections[requestId] =
+            pc;
+
+        /*
+         * ICE candidates -> Firebase
+         */
+
+        pc.onicecandidate = event => {
+
+            if (!event.candidate) {
+                return;
+            }
+
+            sessionRef
+            .child("candidates")
+            .child(requestId)
+            .child("user")
+            .push({
+
+                candidate:
+                    event.candidate.candidate,
+
+                sdpMid:
+                    event.candidate.sdpMid,
+
+                sdpMLineIndex:
+                    event.candidate.sdpMLineIndex
+
+            });
+
+        };
+
+        /*
+         * Connection status
+         */
+
+        pc.onconnectionstatechange = async () => {
+
+            const connected =
+                pc.connectionState ===
+                "connected";
+
+            await userRef.update({
+
+                connected:
+                    connected
+
+            });
+
+            setStatus(
+                "connectionStatus",
+                connected,
+                "CONNECTED",
+                "DISCONNECTED"
+            );
+
+        };
+
+        /*
+         * Add appropriate tracks.
+         */
+
+        let streamToSend = null;
+
+        if (mode === "camera") {
+
+            streamToSend =
+                localStream;
+
+        }
+
+        if (mode === "screen") {
+
+            streamToSend =
+                screenStream;
+
+        }
+
+        if (!streamToSend) {
+            return;
+        }
+
+        streamToSend
+        .getTracks()
+        .forEach(track => {
+
+            pc.addTrack(
+                track,
+                streamToSend
+            );
+
+        });
+
+        await pc.setRemoteDescription({
+
+            type: offer.type,
+
+            sdp: offer.sdp
+
+        });
+
+        /*
+         * Receive admin ICE candidates.
+         */
+
+        const adminCandidatesRef =
+            sessionRef
+            .child("candidates")
+            .child(requestId)
+            .child("admin");
+
+        adminCandidatesRef.on(
+            "child_added",
+            async snapshot => {
+
+                const candidate =
+                    snapshot.val();
+
+                if (
+                    !candidate ||
+                    !candidate.candidate
+                ) {
+                    return;
+                }
+
+                try {
+
+                    await pc.addIceCandidate({
+
+                        candidate:
+                            candidate.candidate,
+
+                        sdpMid:
+                            candidate.sdpMid,
+
+                        sdpMLineIndex:
+                            candidate.sdpMLineIndex
+
+                    });
+
+                } catch (error) {
+
+                    console.error(
+                        "ICE error:",
+                        error
+                    );
+
+                }
+
+            }
+        );
+
+        const answer =
+            await pc.createAnswer();
+
+        await pc.setLocalDescription(
+            answer
+        );
+
+        await sessionRef.update({
+
+            answer: {
+
+                type:
+                    answer.type,
+
+                sdp:
+                    answer.sdp
+
+            },
+
+            error: null
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "WebRTC answer error:",
+            error
+        );
+
+        await sessionRef.update({
+
+            error:
+                String(error)
+
+        });
+
+    }
+
+}
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout() {
+
+    try {
+
+        if (localStream) {
+
+            localStream
+            .getTracks()
+            .forEach(track =>
+                track.stop()
+            );
+
+        }
+
+        if (screenStream) {
+
+            screenStream
+            .getTracks()
+            .forEach(track =>
+                track.stop()
+            );
+
+        }
+
+        Object.values(
+            peerConnections
+        ).forEach(pc => {
+
+            try {
+                pc.close();
+            } catch (_) {}
+
+        });
+
+        await userRef.update({
+
+            online: false,
+
+            camera: false,
+
+            microphone: false,
+
+            screen: false,
+
+            connected: false,
+
+            lastSeen:
+                firebase.database.ServerValue.TIMESTAMP
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+    sessionStorage.clear();
+
+    window.location.href =
+        "login.html";
+}
+
+/* =========================================================
+   INITIAL UI
+   ========================================================= */
+
+updateUserStatus();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Admin - Live Monitor</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    color: #111827;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 15px 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.firebase-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+}
+
+.dot.online {
+    background: #22c55e;
+}
+
+.logout {
+    border: none;
+    background: #374151;
+    color: white;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    min-height: calc(100vh - 62px);
+}
+
+.sidebar {
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    font-size: 18px;
+    margin: 5px 0 15px;
+}
+
+.user-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 9px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.user-card:hover {
+    background: #f9fafb;
+}
+
+.user-card.selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.user-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #9ca3af;
+    color: white;
+    font-weight: bold;
+}
+
+.avatar.online {
+    background: #16a34a;
+}
+
+.user-name {
+    font-weight: bold;
+}
+
+.user-status {
+    color: #6b7280;
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.main {
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 18px rgba(0,0,0,.06);
+}
+
+.selected-user {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.selected-user h2 {
+    margin: 0;
+}
+
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+button.action {
+    border: none;
+    padding: 12px 16px;
+    border-radius: 9px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.camera {
+    background: #2563eb;
+}
+
+.screen {
+    background: #7c3aed;
+}
+
+.stop {
+    background: #dc2626;
+}
+
+.disabled {
+    opacity: .45;
+    cursor: not-allowed !important;
+}
+
+.video-card {
+    background: #111;
+    border-radius: 14px;
+    overflow: hidden;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+video {
+    width: 100%;
+    max-height: 650px;
+    background: #000;
+    object-fit: contain;
+}
+
+.placeholder {
+    color: #d1d5db;
+    text-align: center;
+    padding: 40px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(170px, 1fr));
+
+    gap: 10px;
+}
+
+.info {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.info strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.on {
+    color: #16a34a;
+    font-weight: bold;
+}
+
+.off {
+    color: #6b7280;
+    font-weight: bold;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #1e40af;
+    margin-top: 12px;
+    display: none;
+}
+
+.message.show {
+    display: block;
+}
+
+.message.error {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.audio-control {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.audio-control button {
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    background: #059669;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+@media(max-width:800px) {
+
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid #ddd;
+        max-height: 300px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="title">
+        Admin Live Monitor
+    </div>
+
+    <div class="header-right">
+
+        <div class="firebase-status">
+
+            <span
+                id="firebaseDot"
+                class="dot"
+            ></span>
+
+            <span id="firebaseText">
+                Connecting...
+            </span>
+
+        </div>
+
+        <button
+            class="logout"
+            onclick="logout()"
+        >
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+<div class="layout">
+
+    <!-- =================================================
+         SIDEBAR
+         ================================================= -->
+
+    <aside class="sidebar">
+
+        <h2>
+            Users
+        </h2>
+
+        <div id="usersList">
+
+            Loading users...
+
+        </div>
+
+    </aside>
+
+    <!-- =================================================
+         MAIN
+         ================================================= -->
+
+    <main class="main">
+
+        <div class="card">
+
+            <div class="selected-user">
+
+                <div>
+
+                    <h2>
+                        Selected User:
+                        <span id="selectedUser">
+                            None
+                        </span>
+                    </h2>
+
+                    <div
+                        id="selectedState"
+                        style="color:#6b7280;margin-top:5px;"
+                    >
+                        Select a user from the left.
+                    </div>
+
+                </div>
+
+                <div class="buttons">
+
+                    <button
+                        id="cameraBtn"
+                        class="action camera disabled"
+                        onclick="requestCamera()"
+                        disabled
+                    >
+                        LIVE CAMERA + VOICE
+                    </button>
+
+                    <button
+                        id="screenBtn"
+                        class="action screen disabled"
+                        onclick="requestScreen()"
+                        disabled
+                    >
+                        LIVE SCREEN
+                    </button>
+
+                    <button
+                        id="stopBtn"
+                        class="action stop disabled"
+                        onclick="stopConnection()"
+                        disabled
+                    >
+                        STOP
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div
+                id="message"
+                class="message"
+            ></div>
+
+        </div>
+
+        <!-- =================================================
+             LIVE VIDEO
+             ================================================= -->
+
+        <div class="card">
+
+            <h2>
+                Live Stream
+            </h2>
+
+            <div class="video-card">
+
+                <video
+                    id="remoteVideo"
+                    autoplay
+                    playsinline
+                    controls
+                ></video>
+
+                <div
+                    id="placeholder"
+                    class="placeholder"
+                >
+                    Select an online user and start
+                    a live connection.
+                </div>
+
+            </div>
+
+            <div class="audio-control">
+
+                <button
+                    onclick="enableAudio()"
+                >
+                    🔊 Enable Live Audio
+                </button>
+
+                <span>
+                    If the browser blocks autoplay,
+                    click this button.
+                </span>
+
+            </div>
+
+        </div>
+
+        <!-- =================================================
+             USER STATUS
+             ================================================= -->
+
+        <div class="card">
+
+            <h2>
+                User Permission Status
+            </h2>
+
+            <div class="info-grid">
+
+                <div class="info">
+
+                    <strong>
+                        Camera
+                    </strong>
+
+                    <span
+                        id="cameraStatus"
+                        class="off"
+                    >
+                        OFF
+                    </span>
+
+                </div>
+
+                <div class="info">
+
+                    <strong>
+                        Microphone
+                    </strong>
+
+                    <span
+                        id="microphoneStatus"
+                        class="off"
+                    >
+                        OFF
+                    </span>
+
+                </div>
+
+                <div class="info">
+
+                    <strong>
+                        Screen
+                    </strong>
+
+                    <span
+                        id="screenStatus"
+                        class="off"
+                    >
+                        OFF
+                    </span>
+
+                </div>
+
+                <div class="info">
+
+                    <strong>
+                        User
+                    </strong>
+
+                    <span
+                        id="onlineStatus"
+                        class="off"
+                    >
+                        OFFLINE
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-database-compat.js"></script>
+
+<script>
+
+/* =========================================================
+   ADMIN CHECK
+   ========================================================= */
+
+if (
+    sessionStorage.getItem("loginRole")
+    !== "admin"
+) {
+
+    window.location.href =
+        "login.html";
+
+}
+
+/* =========================================================
+   FIREBASE
+   ========================================================= */
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyA9-l3QMx1Z-wul199k1OwPKWXdGdtMaoBw"
+        .replace("PKWXd", "PKWXd"),
+
+    authDomain:
+        "live-monitor-e6911.firebaseapp.com",
+
+    databaseURL:
+        "https://live-monitor-e6911-default-rtdb.firebaseio.com",
+
+    projectId:
+        "live-monitor-e6911",
+
+    storageBucket:
+        "live-monitor-e6911.firebasestorage.app",
+
+    messagingSenderId:
+        "216149537073",
+
+    appId:
+        "1:216149537073:web:a608e4f0391d22e6c78010"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db =
+    firebase.database();
+
+/* =========================================================
+   VARIABLES
+   ========================================================= */
+
+let selectedUser = null;
+
+let selectedUserData = null;
+
+let currentRequestId = null;
+
+let peerConnection = null;
+
+let sessionRef = null;
+
+let answerListener = null;
+
+let userCandidateListener = null;
+
+let userStatusListener = null;
+
+let audioEnabled = false;
+
+/* =========================================================
+   FIREBASE CONNECTION
+   ========================================================= */
+
+db.ref(".info/connected")
+.on("value", snapshot => {
+
+    const online =
+        snapshot.val() === true;
+
+    document.getElementById(
+        "firebaseDot"
+    ).className =
+        online
+            ? "dot online"
+            : "dot";
+
+    document.getElementById(
+        "firebaseText"
+    ).textContent =
+        online
+            ? "Firebase Connected"
+            : "Firebase Offline";
+
+});
+
+/* =========================================================
+   USERS
+   ========================================================= */
+
+db.ref("users")
+.on("value", snapshot => {
+
+    const users =
+        snapshot.val() || {};
+
+    const list =
+        document.getElementById(
+            "usersList"
+        );
+
+    list.innerHTML = "";
+
+    const entries =
+        Object.entries(users);
+
+    if (!entries.length) {
+
+        list.innerHTML =
+            "<p>No users found.</p>";
+
+        return;
+    }
+
+    entries.forEach(
+        ([encodedId, data]) => {
+
+            const userId =
+                data.id ||
+                decodeURIComponent(
+                    encodedId
+                );
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "user-card";
+
+            if (
+                selectedUser === userId
+            ) {
+                card.classList.add(
+                    "selected"
+                );
+            }
+
+            const online =
+                data.online === true;
+
+            card.innerHTML = `
+
+                <div class="user-top">
+
+                    <div class="avatar ${
+                        online
+                            ? "online"
+                            : ""
+                    }">
+                        ${userId
+                            .charAt(0)
+                            .toUpperCase()}
+                    </div>
+
+                    <div>
+
+                        <div class="user-name">
+                            ${escapeHtml(userId)}
+                        </div>
+
+                        <div class="user-status">
+                            ${
+                                online
+                                    ? "ONLINE"
+                                    : "OFFLINE"
+                            }
+                        </div>
+
+                    </div>
+
+                </div>
+
+            `;
+
+            card.onclick = () => {
+
+                selectUser(
+                    userId,
+                    data
+                );
+
+            };
+
+            list.appendChild(card);
+
+        }
+    );
+
+});
+
+/* =========================================================
+   SELECT USER
+   ========================================================= */
+
+function selectUser(
+    userId,
+    data
+) {
+
+    if (
+        selectedUser &&
+        selectedUser !== userId
+    ) {
+
+        stopConnection();
+
+    }
+
+    selectedUser =
+        userId;
+
+    selectedUserData =
+        data;
+
+    document.getElementById(
+        "selectedUser"
+    ).textContent =
+        userId;
+
+    document.getElementById(
+        "selectedState"
+    ).textContent =
+        data.online === true
+            ? "User is online."
+            : "User is offline.";
+
+    updatePermissionUI(
+        data
+    );
+
+    enableButtons();
+
+    listenSelectedUser();
+
+}
+
+/* =========================================================
+   USER STATUS LISTENER
+   ========================================================= */
+
+function listenSelectedUser() {
+
+    if (userStatusListener) {
+
+        userStatusListener();
+
+        userStatusListener = null;
+
+    }
+
+    if (!selectedUser) {
+        return;
+    }
+
+    const ref =
+        db.ref(
+            "users/" +
+            encodeURIComponent(
+                selectedUser
+            )
+        );
+
+    userStatusListener =
+        ref.on(
+            "value",
+            snapshot => {
+
+                const data =
+                    snapshot.val() || {};
+
+                selectedUserData =
+                    data;
+
+                document.getElementById(
+                    "selectedState"
+                ).textContent =
+                    data.online === true
+                        ? "User is online."
+                        : "User is offline.";
+
+                updatePermissionUI(
+                    data
+                );
+
+            }
+        );
+
+}
+
+/* =========================================================
+   PERMISSION UI
+   ========================================================= */
+
+function updatePermissionUI(data) {
+
+    setStatus(
+        "cameraStatus",
+        data.camera === true,
+        "ALLOWED",
+        "OFF"
+    );
+
+    setStatus(
+        "microphoneStatus",
+        data.microphone === true,
+        "ALLOWED",
+        "OFF"
+    );
+
+    setStatus(
+        "screenStatus",
+        data.screen === true,
+        "ALLOWED",
+        "OFF"
+    );
+
+    setStatus(
+        "onlineStatus",
+        data.online === true,
+        "ONLINE",
+        "OFFLINE"
+    );
+
+}
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function setStatus(
+    id,
+    enabled,
+    yes,
+    no
+) {
+
+    const element =
+        document.getElementById(id);
+
+    element.textContent =
+        enabled
+            ? yes
+            : no;
+
+    element.className =
+        enabled
+            ? "on"
+            : "off";
+
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+function enableButtons() {
+
+    const hasUser =
+        !!selectedUser;
+
+    const online =
+        selectedUserData &&
+        selectedUserData.online === true;
+
+    document.getElementById(
+        "cameraBtn"
+    ).disabled =
+        !hasUser ||
+        !online ||
+        !(
+            selectedUserData.camera === true &&
+            selectedUserData.microphone === true
+        );
+
+    document.getElementById(
+        "screenBtn"
+    ).disabled =
+        !hasUser ||
+        !online ||
+        !(
+            selectedUserData.screen === true
+        );
+
+    document.getElementById(
+        "cameraBtn"
+    ).classList.toggle(
+        "disabled",
+        document.getElementById(
+            "cameraBtn"
+        ).disabled
+    );
+
+    document.getElementById(
+        "screenBtn"
+    ).classList.toggle(
+        "disabled",
+        document.getElementById(
+            "screenBtn"
+        ).disabled
+    );
+
+}
+
+/* =========================================================
+   REQUEST CAMERA
+   ========================================================= */
+
+async function requestCamera() {
+
+    if (!selectedUser) {
+        return;
+    }
+
+    if (
+        !selectedUserData ||
+        selectedUserData.online !== true
+    ) {
+
+        showMessage(
+            "User is offline.",
+            true
+        );
+
+        return;
+    }
+
+    if (
+        selectedUserData.camera !== true ||
+        selectedUserData.microphone !== true
+    ) {
+
+        showMessage(
+            "User must first allow camera and microphone.",
+            true
+        );
+
+        return;
+    }
+
+    await startConnection(
+        "camera"
+    );
+
+}
+
+/* =========================================================
+   REQUEST SCREEN
+   ========================================================= */
+
+async function requestScreen() {
+
+    if (!selectedUser) {
+        return;
+    }
+
+    if (
+        !selectedUserData ||
+        selectedUserData.screen !== true
+    ) {
+
+        showMessage(
+            "User has not enabled screen sharing.",
+            true
+        );
+
+        return;
+    }
+
+    await startConnection(
+        "screen"
+    );
+
+}
+
+/* =========================================================
+   WEBRTC CONFIG
+   ========================================================= */
+
+const rtcConfig = {
+
+    iceServers: [
+
+        {
+            urls:
+                "stun:stun.l.google.com:19302"
+        },
+
+        {
+            urls:
+                "stun:stun1.l.google.com:19302"
+        }
+
+    ]
+
+};
+
+/* =========================================================
+   START CONNECTION
+   ========================================================= */
+
+async function startConnection(
+    mode
+) {
+
+    await stopConnection();
+
+    currentRequestId =
+        Date.now().toString() +
+        "_" +
+        Math.random()
+        .toString(36)
+        .substring(2);
+
+    const encodedUser =
+        encodeURIComponent(
+            selectedUser
+        );
+
+    sessionRef =
+        db.ref(
+            "sessions/" +
+            encodedUser
+        );
+
+    peerConnection =
+        new RTCPeerConnection(
+            rtcConfig
+        );
+
+    const pc =
+        peerConnection;
+
+    /*
+     * RECEIVE MEDIA
+     */
+
+    pc.ontrack = event => {
+
+        const video =
+            document.getElementById(
+                "remoteVideo"
+            );
+
+        if (
+            event.streams &&
+            event.streams.length
+        ) {
+
+            video.srcObject =
+                event.streams[0];
+
+        } else {
+
+            let stream =
+                video.srcObject;
+
+            if (!stream) {
+
+                stream =
+                    new MediaStream();
+
+                video.srcObject =
+                    stream;
+
+            }
+
+            stream.addTrack(
+                event.track
+            );
+
+        }
+
+        document.getElementById(
+            "placeholder"
+        ).style.display =
+            "none";
+
+        video.play()
+        .then(() => {
+
+            audioEnabled = true;
+
+        })
+        .catch(error => {
+
+            console.log(
+                "Autoplay blocked:",
+                error
+            );
+
+        });
+
+        showMessage(
+            mode === "camera"
+                ? "Live camera and microphone connected."
+                : "Live screen connected."
+        );
+
+    };
+
+    /*
+     * ICE -> Firebase
+     */
+
+    pc.onicecandidate =
+        event => {
+
+            if (!event.candidate) {
+                return;
+            }
+
+            sessionRef
+            .child("candidates")
+            .child(currentRequestId)
+            .child("admin")
+            .push({
+
+                candidate:
+                    event.candidate.candidate,
+
+                sdpMid:
+                    event.candidate.sdpMid,
+
+                sdpMLineIndex:
+                    event.candidate
+                    .sdpMLineIndex
+
+            });
+
+        };
+
+    /*
+     * Connection state
+     */
+
+    pc.onconnectionstatechange =
+        () => {
+
+            const state =
+                pc.connectionState;
+
+            console.log(
+                "WebRTC state:",
+                state
+            );
+
+            if (
+                state === "connected"
+            ) {
+
+                showMessage(
+                    "WebRTC connection established."
+                );
+
+            }
+
+            if (
+                state === "failed"
+            ) {
+
+                showMessage(
+                    "WebRTC connection failed. Try again.",
+                    true
+                );
+
+            }
+
+        };
+
+    /*
+     * Listen for user ICE.
+     */
+
+    const userCandidatesRef =
+        sessionRef
+        .child("candidates")
+        .child(currentRequestId)
+        .child("user");
+
+    userCandidateListener =
+        userCandidatesRef.on(
+            "child_added",
+            async snapshot => {
+
+                const candidate =
+                    snapshot.val();
+
+                if (
+                    !candidate ||
+                    !candidate.candidate
+                ) {
+                    return;
+                }
+
+                try {
+
+                    await pc.addIceCandidate({
+
+                        candidate:
+                            candidate.candidate,
+
+                        sdpMid:
+                            candidate.sdpMid,
+
+                        sdpMLineIndex:
+                            candidate.sdpMLineIndex
+
+                    });
+
+                } catch (error) {
+
+                    console.error(
+                        "ICE candidate error:",
+                        error
+                    );
+
+                }
+
+            }
+        );
+
+    /*
+     * Listen for answer.
+     */
+
+    answerListener =
+        sessionRef.on(
+            "value",
+            async snapshot => {
+
+                const data =
+                    snapshot.val();
+
+                if (!data) {
+                    return;
+                }
+
+                if (
+                    data.requestId !==
+                    currentRequestId
+                ) {
+                    return;
+                }
+
+                if (!data.answer) {
+                    return;
+                }
+
+                if (
+                    pc.currentRemoteDescription
+                ) {
+                    return;
+                }
+
+                try {
+
+                    await pc.setRemoteDescription({
+
+                        type:
+                            data.answer.type,
+
+                        sdp:
+                            data.answer.sdp
+
+                    });
+
+                } catch (error) {
+
+                    console.error(
+                        "Remote description error:",
+                        error
+                    );
+
+                }
+
+                if (data.error) {
+
+                    showMessage(
+                        data.error,
+                        true
+                    );
+
+                }
+
+            }
+        );
+
+    /*
+     * Create offer.
+     */
+
+    const offer =
+        await pc.createOffer({
+
+            offerToReceiveAudio:
+                mode === "camera",
+
+            offerToReceiveVideo:
+                true
+
+        });
+
+    await pc.setLocalDescription(
+        offer
+    );
+
+    /*
+     * Send request.
+     */
+
+    await sessionRef.set({
+
+        requestId:
+            currentRequestId,
+
+        mode:
+            mode,
+
+        offer: {
+
+            type:
+                offer.type,
+
+            sdp:
+                offer.sdp
+
+        },
+
+        createdAt:
+            firebase.database.ServerValue.TIMESTAMP,
+
+        error: null
+
+    });
+
+    showMessage(
+        mode === "camera"
+            ? "Camera + microphone request sent."
+            : "Screen request sent."
+    );
+
+    document.getElementById(
+        "stopBtn"
+    ).disabled = false;
+
+    document.getElementById(
+        "stopBtn"
+    ).classList.remove(
+        "disabled"
+    );
+
+}
+
+/* =========================================================
+   STOP CONNECTION
+   ========================================================= */
+
+async function stopConnection() {
+
+    if (answerListener && sessionRef) {
+
+        sessionRef.off(
+            "value",
+            answerListener
+        );
+
+        answerListener = null;
+
+    }
+
+    if (
+        userCandidateListener &&
+        sessionRef &&
+        currentRequestId
+    ) {
+
+        sessionRef
+        .child("candidates")
+        .child(currentRequestId)
+        .child("user")
+        .off(
+            "value",
+            userCandidateListener
+        );
+
+        userCandidateListener = null;
+
+    }
+
+    if (peerConnection) {
+
+        try {
+
+            peerConnection.close();
+
+        } catch (_) {}
+
+        peerConnection = null;
+
+    }
+
+    if (sessionRef) {
+
+        try {
+
+            await sessionRef.remove();
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+        }
+
+    }
+
+    currentRequestId =
+        null;
+
+    const video =
+        document.getElementById(
+            "remoteVideo"
+        );
+
+    if (video.srcObject) {
+
+        video.srcObject
+        .getTracks()
+        .forEach(track => {
+
+            try {
+                track.stop();
+            } catch (_) {}
+
+        });
+
+    }
+
+    video.srcObject = null;
+
+    document.getElementById(
+        "placeholder"
+    ).style.display =
+        "block";
+
+    document.getElementById(
+        "stopBtn"
+    ).disabled = true;
+
+    document.getElementById(
+        "stopBtn"
+    ).classList.add(
+        "disabled"
+    );
+
+}
+
+/* =========================================================
+   AUDIO
+   ========================================================= */
+
+async function enableAudio() {
+
+    const video =
+        document.getElementById(
+            "remoteVideo"
+        );
+
+    video.muted = false;
+
+    video.volume = 1.0;
+
+    try {
+
+        await video.play();
+
+        audioEnabled = true;
+
+        showMessage(
+            "Live audio enabled."
+        );
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+        showMessage(
+            "Browser blocked audio playback. Click the video/audio control.",
+            true
+        );
+
+    }
+
+}
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+function showMessage(
+    text,
+    error = false
+) {
+
+    const element =
+        document.getElementById(
+            "message"
+        );
+
+    element.textContent =
+        text;
+
+    element.className =
+        error
+            ? "message show error"
+            : "message show";
+
+}
+
+/* =========================================================
+   HTML ESCAPE
+   ========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout() {
+
+    await stopConnection();
+
+    if (userStatusListener) {
+
+        userStatusListener();
+
+        userStatusListener =
+            null;
+
+    }
+
+    sessionStorage.clear();
+
+    window.location.href =
+        "login.html";
+
+}
+
+</script>
+
+</body>
+</html>
