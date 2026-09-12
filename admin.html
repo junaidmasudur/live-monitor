@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin Panel - Live Monitor</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#eef2f7;
+    color:#111827;
+}
+
+.header{
+    height:65px;
+    background:#1f2937;
+    color:white;
+    padding:0 20px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.header h2{
+    margin:0;
+    font-size:21px;
+}
+
+.header-right{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+#firebaseStatus{
+    font-size:14px;
+}
+
+.main{
+    display:flex;
+    height:calc(100vh - 65px);
+}
+
+.left{
+    width:320px;
+    background:white;
+    padding:18px;
+    overflow-y:auto;
+    border-right:1px solid #ddd;
+}
+
+.left h3{
+    margin-top:0;
+}
+
+.right{
+    flex:1;
+    padding:25px;
+    overflow:auto;
+}
+
+.user{
+    padding:14px;
+    margin:9px 0;
+    border-radius:10px;
+    cursor:pointer;
+    background:#f3f4f6;
+    border:1px solid #e5e7eb;
+    transition:.2s;
+}
+
+.user:hover{
+    background:#e5e7eb;
+}
+
+.user.active{
+    background:#2563eb;
+    color:white;
+    border-color:#2563eb;
+}
+
+.user-name{
+    font-size:16px;
+    font-weight:bold;
+}
+
+.user-info{
+    margin-top:5px;
+    line-height:1.5;
+}
+
+video{
+    width:100%;
+    max-width:900px;
+    min-height:300px;
+    background:#000;
+    border-radius:12px;
+    display:block;
+    object-fit:contain;
+}
+
+.controls{
+    margin:15px 0;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+button{
+    padding:11px 18px;
+    border:none;
+    border-radius:8px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:bold;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+.disconnect-btn{
+    background:#dc2626;
+}
+
+.logout-btn{
+    background:#dc2626;
+}
+
+.status-box{
+    margin-top:18px;
+    padding:15px;
+    background:white;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    max-width:900px;
+}
+
+.status-label{
+    font-weight:bold;
+}
+
+.green{
+    color:#16a34a;
+    font-weight:bold;
+}
+
+.red{
+    color:#dc2626;
+    font-weight:bold;
+}
+
+.orange{
+    color:#ea580c;
+    font-weight:bold;
+}
+
+.gray{
+    color:#6b7280;
+}
+
+.empty{
+    color:#6b7280;
+    text-align:center;
+    padding:20px 5px;
+}
+
+@media(max-width:800px){
+
+    .main{
+        flex-direction:column;
+        height:auto;
+    }
+
+    .left{
+        width:100%;
+        max-height:300px;
+        border-right:none;
+        border-bottom:1px solid #ddd;
+    }
+
+    .right{
+        padding:15px;
+    }
+
+    .header{
+        padding:0 12px;
+    }
+
+    .header h2{
+        font-size:17px;
+    }
+
+    .reset-users-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #e53935;
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.reset-users-btn:hover {
+    background: #c62828;
+}
+
+.reset-users-btn:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+    #firebaseStatus{
+        display:none;
+    }
+
+
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- =========================================
+     HEADER
+========================================= -->
+
+<div class="header">
+
+    <h2>ADMIN PANEL</h2>
+
+    <div class="header-right">
+
+        <span id="firebaseStatus">
+            🔴 Firebase Disconnected
+        </span>
+
+        <button
+            class="logout-btn"
+            onclick="logout()">
+            Logout
+        </button>
+
+        <button id="resetUsersBtn" class="reset-users-btn" onclick="resetUsersOnly()">
+    🗑 Reset User List
+</button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
+<div class="main">
+
+
+    <!-- =====================================
+         USERS
+    ====================================== -->
+
+    <div class="left">
+
+        <h3>Users</h3>
+
+        <div id="userList">
+
+            <div class="empty">
+                Loading users...
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================
+         VIDEO AREA
+    ====================================== -->
+
+    <div class="right">
+
+        <h2 id="selected">
+            No User Selected
+        </h2>
+
+        <div class="controls">
+
+            <button
+                onclick="connectUser()">
+                Start Connection
+            </button>
+
+            <button
+                class="disconnect-btn"
+                onclick="disconnectUser()">
+                Disconnect
+            </button>
+
+        </div>
+
+        <video
+            id="remoteVideo"
+            autoplay
+            playsinline>
+        </video>
+
+        <div class="status-box">
+
+            <span class="status-label">
+                Connection Status:
+            </span>
+
+            <span
+                id="connectionStatus"
+                class="gray">
+                Waiting...
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     FIREBASE
+========================================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+
+
+<script>
+
+/* =========================================
+   VARIABLES
+========================================= */
+
+let selectedUser = null;
+
+let selectedUserName = null;
+
+let pc = null;
+
+let currentCallRef = null;
+
+let answerListener = null;
+
+let answerCandidateListener = null;
+
+let connectionTimer = null;
+
+let currentOfferId = null;
+
+
+/* =========================================
+   ELEMENTS
+========================================= */
+
+const firebaseStatus =
+    document.getElementById("firebaseStatus");
+
+const userList =
+    document.getElementById("userList");
+
+const selected =
+    document.getElementById("selected");
+
+const remoteVideo =
+    document.getElementById("remoteVideo");
+
+const connectionStatus =
+    document.getElementById("connectionStatus");
+
+
+/* =========================================
+   FIREBASE CONNECTION
+========================================= */
+
+db.ref(".info/connected").on(
+    "value",
+    snapshot => {
+
+        if(snapshot.val()){
+
+            firebaseStatus.innerHTML =
+                "🟢 Firebase Connected";
+
+        }else{
+
+            firebaseStatus.innerHTML =
+                "🔴 Firebase Disconnected";
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   USER LIST
+========================================= */
+
+db.ref("users").on(
+    "value",
+    snapshot => {
+
+        userList.innerHTML = "";
+
+        if(!snapshot.exists()){
+
+            userList.innerHTML =
+                '<div class="empty">No users found.</div>';
+
+            return;
+
+        }
+
+        snapshot.forEach(
+            child => {
+
+                const id =
+                    child.key;
+
+                const u =
+                    child.val() || {};
+
+                const div =
+                    document.createElement("div");
+
+                div.className = "user";
+
+                div.id =
+                    "user_" + id;
+
+
+                const online =
+                    u.status === "connected";
+
+
+                const camera =
+                    u.camera === true;
+
+
+                const microphone =
+                    u.microphone === true;
+
+
+                div.innerHTML = `
+
+                    <div class="user-name">
+
+                        ${online ? "🟢" : "🔴"}
+                        ${escapeHtml(u.name || "Unknown User")}
+
+                    </div>
+
+                    <div class="user-info">
+
+                        <small>
+                            Camera:
+                            ${camera ? "✅ Allowed" : "❌ Not Allowed"}
+                        </small>
+
+                        <br>
+
+                        <small>
+                            Microphone:
+                            ${microphone ? "✅ Allowed" : "❌ Not Allowed"}
+                        </small>
+
+                        <br>
+
+                        <small>
+                            Status:
+                            ${online ? "Online" : "Offline"}
+                        </small>
+
+                    </div>
+
+                `;
+
+
+                div.onclick =
+                    () => selectUser(
+                        id,
+                        u.name || "Unknown User"
+                    );
+
+
+                userList.appendChild(div);
+
+            }
+        );
+
+    }
+);
+
+
+
+/* =========================================
+   SELECT USER
+========================================= */
+
+function selectUser(id,name){
+
+    if(
+        selectedUser &&
+        selectedUser !== id
+    ){
+
+        disconnectUser(false);
+
+    }
+
+
+    selectedUser =
+        id;
+
+    selectedUserName =
+        name;
+
+
+    selected.textContent =
+        name;
+
+
+    document
+        .querySelectorAll(".user")
+        .forEach(
+            element => {
+
+                element.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+    const selectedElement =
+        document.getElementById(
+            "user_" + id
+        );
+
+
+    if(selectedElement){
+
+        selectedElement.classList.add(
+            "active"
+        );
+
+    }
+
+
+    connectionStatus.innerHTML =
+        '<span class="gray">User selected. Press Start Connection.</span>';
+
+}
+
+
+/* =========================================
+   WEBRTC CONFIG
+========================================= */
+
+function createPeerConnection(){
+
+    const connection =
+        new RTCPeerConnection({
+
+            iceServers: [
+
+                {
+                    urls:
+                    "stun:stun.l.google.com:19302"
+                },
+
+                {
+                    urls:
+                    "turn:openrelay.metered.ca:80",
+
+                    username:
+                    "openrelayproject",
+
+                    credential:
+                    "openrelayproject"
+                },
+
+                {
+                    urls:
+                    "turn:openrelay.metered.ca:443",
+
+                    username:
+                    "openrelayproject",
+
+                    credential:
+                    "openrelayproject"
+                },
+
+                {
+                    urls:
+                    "turn:openrelay.metered.ca:443?transport=tcp",
+
+                    username:
+                    "openrelayproject",
+
+                    credential:
+                    "openrelayproject"
+                }
+
+            ]
+
+        });
+
+
+    return connection;
+
+}
+
+
+/* =========================================
+   START CONNECTION
+========================================= */
+
+async function connectUser(){
+
+    if(!selectedUser){
+
+        alert(
+            "Please select a user first."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        connectionStatus.innerHTML =
+            '<span class="orange">🟠 Preparing connection...</span>';
+
+
+        /*
+         * Close old connection.
+         */
+
+        cleanupPeerConnection();
+
+
+        /*
+         * Firebase call location.
+         */
+
+        currentCallRef =
+            db.ref(
+                "calls/" +
+                selectedUser
+            );
+
+
+        /*
+         * Remove old signaling data.
+         */
+
+        await currentCallRef.remove();
+
+
+        /*
+         * Create unique offer ID.
+         */
+
+        currentOfferId =
+            "offer_" +
+            Date.now() +
+            "_" +
+            Math.random()
+                .toString(36)
+                .substring(2,8);
+
+
+        console.log(
+            "Offer ID:",
+            currentOfferId
+        );
+
+
+        /*
+         * Create PeerConnection.
+         */
+
+        pc =
+            createPeerConnection();
+
+
+        console.log(
+            "PeerConnection created"
+        );
+
+
+        /* =================================
+           RECEIVE REMOTE STREAM
+        ================================= */
+
+        pc.ontrack =
+            event => {
+
+                console.log(
+                    "Remote track received:",
+                    event.track.kind
+                );
+
+
+                if(
+                    event.streams &&
+                    event.streams.length > 0
+                ){
+
+                    remoteVideo.srcObject =
+                        event.streams[0];
+
+                    remoteVideo
+                        .play()
+                        .catch(
+                            error => {
+
+                                console.warn(
+                                    "Video autoplay:",
+                                    error
+                                );
+
+                            }
+                        );
+
+                }
+
+
+                connectionStatus.innerHTML =
+                    '<span class="green">🟢 Live Video + Audio Connected</span>';
+
+            };
+
+
+        /* =================================
+           LOCAL ICE
+        ================================= */
+
+        pc.onicecandidate =
+            event => {
+
+                if(
+                    !event.candidate ||
+                    !currentCallRef
+                ){
+
+                    return;
+
+                }
+
+
+                const candidate = {
+
+                    candidate:
+                        event.candidate.candidate,
+
+                    sdpMid:
+                        event.candidate.sdpMid,
+
+                    sdpMLineIndex:
+                        event.candidate.sdpMLineIndex,
+
+                    usernameFragment:
+                        event.candidate.usernameFragment || null
+
+                };
+
+
+                currentCallRef
+                    .child("offerCandidates")
+                    .push(candidate)
+                    .catch(
+                        error => {
+
+                            console.error(
+                                "ICE Firebase error:",
+                                error
+                            );
+
+                        }
+                    );
+
+            };
+
+
+        /* =================================
+           CONNECTION STATE
+        ================================= */
+
+        pc.onconnectionstatechange =
+            () => {
+
+                if(!pc){
+
+                    return;
+
+                }
+
+
+                console.log(
+                    "Connection state:",
+                    pc.connectionState
+                );
+
+
+                if(
+                    pc.connectionState ===
+                    "connected"
+                ){
+
+                    clearTimeout(
+                        connectionTimer
+                    );
+
+                    connectionStatus.innerHTML =
+                        '<span class="green">🟢 Live Video + Audio Connected</span>';
+
+                }
+
+
+                else if(
+                    pc.connectionState ===
+                    "connecting"
+                ){
+
+                    connectionStatus.innerHTML =
+                        '<span class="orange">🟠 Connecting...</span>';
+
+                }
+
+
+                else if(
+                    pc.connectionState ===
+                    "disconnected"
+                ){
+
+                    connectionStatus.innerHTML =
+                        '<span class="orange">🟠 Connection Disconnected</span>';
+
+                }
+
+
+                else if(
+                    pc.connectionState ===
+                    "failed"
+                ){
+
+                    clearTimeout(
+                        connectionTimer
+                    );
+
+                    connectionStatus.innerHTML =
+                        '<span class="red">🔴 WebRTC Connection Failed</span>';
+
+                }
+
+
+                else if(
+                    pc.connectionState ===
+                    "closed"
+                ){
+
+                    connectionStatus.innerHTML =
+                        '<span class="gray">Connection Closed</span>';
+
+                }
+
+            };
+
+
+        /* =================================
+           ICE CONNECTION STATE
+        ================================= */
+
+        pc.oniceconnectionstatechange =
+            () => {
+
+                if(!pc){
+
+                    return;
+
+                }
+
+
+                console.log(
+                    "ICE state:",
+                    pc.iceConnectionState
+                );
+
+            };
+
+
+        /* =================================
+           RECEIVE ONLY VIDEO
+        ================================= */
+
+        pc.addTransceiver(
+            "video",
+            {
+                direction:
+                    "recvonly"
+            }
+        );
+
+
+        /* =================================
+           RECEIVE ONLY AUDIO
+        ================================= */
+
+        pc.addTransceiver(
+            "audio",
+            {
+                direction:
+                    "recvonly"
+            }
+        );
+
+
+        console.log(
+            "Transceivers added"
+        );
+
+
+        /* =================================
+           CREATE OFFER
+        ================================= */
+
+        connectionStatus.innerHTML =
+            '<span class="orange">🟠 Creating offer...</span>';
+
+
+        const offer =
+            await pc.createOffer();
+
+
+        console.log(
+            "Offer created:",
+            offer
+        );
+
+
+        /*
+         * IMPORTANT:
+         * Do NOT use offer.toJSON()
+         */
+
+        await pc.setLocalDescription(
+            offer
+        );
+
+
+        console.log(
+            "Local description set"
+        );
+
+
+        /*
+         * Store plain object in Firebase.
+         */
+
+        await currentCallRef.set({
+
+            offer: {
+
+                type:
+                    offer.type,
+
+                sdp:
+                    offer.sdp
+
+            },
+
+            offerId:
+                currentOfferId,
+
+            createdAt:
+                firebase.database.ServerValue.TIMESTAMP
+
+        });
+
+
+        console.log(
+            "Offer successfully sent to Firebase"
+        );
+
+
+        connectionStatus.innerHTML =
+            '<span class="orange">🟠 Waiting for user answer...</span>';
+
+
+        /* =================================
+           LISTEN FOR ANSWER
+        ================================= */
+
+        answerListener =
+            currentCallRef
+                .child("answer")
+                .on(
+                    "value",
+                    async snapshot => {
+
+                        const answer =
+                            snapshot.val();
+
+
+                        if(
+                            !answer ||
+                            !pc
+                        ){
+
+                            return;
+
+                        }
+
+
+                        if(
+                            pc.currentRemoteDescription
+                        ){
+
+                            return;
+
+                        }
+
+
+                        console.log(
+                            "Answer received:",
+                            answer
+                        );
+
+
+                        try{
+
+                            await pc.setRemoteDescription(
+
+                                new RTCSessionDescription({
+
+                                    type:
+                                        answer.type,
+
+                                    sdp:
+                                        answer.sdp
+
+                                })
+
+                            );
+
+
+                            console.log(
+                                "Remote description set"
+                            );
+
+
+                            connectionStatus.innerHTML =
+                                '<span class="orange">🟠 Connecting media...</span>';
+
+
+                        }catch(error){
+
+                            console.error(
+                                "Remote description error:",
+                                error
+                            );
+
+
+                            connectionStatus.innerHTML =
+                                '<span class="red">🔴 Failed to set user answer</span>';
+
+                        }
+
+                    }
+                );
+
+
+        /* =================================
+           RECEIVE USER ICE
+        ================================= */
+
+        answerCandidateListener =
+            currentCallRef
+                .child("answerCandidates")
+                .on(
+                    "child_added",
+                    async snapshot => {
+
+                        const candidate =
+                            snapshot.val();
+
+
+                        if(
+                            !candidate ||
+                            !pc
+                        ){
+
+                            return;
+
+                        }
+
+
+                        try{
+
+                            await pc.addIceCandidate(
+
+                                new RTCIceCandidate({
+
+                                    candidate:
+                                        candidate.candidate,
+
+                                    sdpMid:
+                                        candidate.sdpMid,
+
+                                    sdpMLineIndex:
+                                        candidate.sdpMLineIndex,
+
+                                    usernameFragment:
+                                        candidate.usernameFragment || null
+
+                                })
+
+                            );
+
+
+                            console.log(
+                                "User ICE candidate added"
+                            );
+
+
+                        }catch(error){
+
+                            console.warn(
+                                "User ICE candidate error:",
+                                error
+                            );
+
+                        }
+
+                    }
+                );
+
+
+        /*
+         * 40 second timeout.
+         */
+
+        connectionTimer =
+            setTimeout(
+                () => {
+
+                    if(
+                        pc &&
+                        pc.connectionState !==
+                        "connected"
+                    ){
+
+                        connectionStatus.innerHTML =
+                            '<span class="red">🔴 Connection timeout</span>';
+
+                    }
+
+                },
+                40000
+            );
+
+
+    }catch(error){
+
+        console.error(
+            "=============================="
+        );
+
+        console.error(
+            "WEBRTC ERROR"
+        );
+
+        console.error(
+            error
+        );
+
+        console.error(
+            "Name:",
+            error.name
+        );
+
+        console.error(
+            "Message:",
+            error.message
+        );
+
+        console.error(
+            "=============================="
+        );
+
+
+        connectionStatus.innerHTML =
+            '<span class="red">🔴 Failed to create offer</span>';
+
+
+        alert(
+            "WebRTC Error:\n\n" +
+            error.name +
+            "\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   CLEAN PEER CONNECTION
+========================================= */
+
+function cleanupPeerConnection(){
+
+    clearTimeout(
+        connectionTimer
+    );
+
+    connectionTimer =
+        null;
+
+
+    if(
+        currentCallRef
+    ){
+
+        if(
+            answerListener
+        ){
+
+            currentCallRef
+                .child("answer")
+                .off(
+                    "value",
+                    answerListener
+                );
+
+        }
+
+
+        if(
+            answerCandidateListener
+        ){
+
+            currentCallRef
+                .child("answerCandidates")
+                .off(
+                    "child_added",
+                    answerCandidateListener
+                );
+
+        }
+
+    }
+
+
+    answerListener =
+        null;
+
+    answerCandidateListener =
+        null;
+
+
+    if(pc){
+
+        try{
+
+            pc.ontrack =
+                null;
+
+            pc.onicecandidate =
+                null;
+
+            pc.close();
+
+        }catch(error){
+
+            console.warn(error);
+
+        }
+
+        pc =
+            null;
+
+    }
+
+
+    remoteVideo.srcObject =
+        null;
+
+}
+
+
+/* =========================================
+   DISCONNECT
+========================================= */
+
+async function disconnectUser(
+    clearSelection = true
+){
+
+    cleanupPeerConnection();
+
+
+    if(
+        selectedUser
+    ){
+
+        try{
+
+            await db
+                .ref(
+                    "calls/" +
+                    selectedUser
+                )
+                .remove();
+
+        }catch(error){
+
+            console.warn(
+                "Call cleanup error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    currentCallRef =
+        null;
+
+    currentOfferId =
+        null;
+
+
+    connectionStatus.innerHTML =
+        '<span class="gray">Disconnected.</span>';
+
+
+    if(clearSelection){
+
+        selectedUser =
+            null;
+
+        selectedUserName =
+            null;
+
+        selected.textContent =
+            "No User Selected";
+
+
+        document
+            .querySelectorAll(".user")
+            .forEach(
+                element => {
+
+                    element.classList.remove(
+                        "active"
+                    );
+
+                }
+            );
+
+    }
+
+}
+
+
+/* =========================================
+   LOGOUT
+========================================= */
+
+async function logout(){
+
+    await disconnectUser();
+
+    localStorage.removeItem(
+        "adminLoggedIn"
+    );
+
+    location.href =
+        "login.html";
+
+}
+
+
+/* =========================================
+   ESCAPE HTML
+========================================= */
+
+function escapeHtml(text){
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text;
+
+    return div.innerHTML;
+
+}
+
+async function resetUsersOnly() {
+
+    const confirmed = confirm(
+        "Are you sure you want to reset the user list?\n\n" +
+        "Only the Firebase /users data will be removed."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const button = document.getElementById("resetUsersBtn");
+
+    try {
+
+        button.disabled = true;
+        button.textContent = "⏳ Resetting...";
+
+        // ONLY remove /users
+        await db.ref("users").remove();
+
+        // Clear selected user
+        selectedUser = null;
+
+        // Disconnect current WebRTC connection if your function exists
+        if (typeof cleanupConnection === "function") {
+            cleanupConnection();
+        }
+
+        // Clear user list UI
+        const userList = document.getElementById("userList");
+
+        if (userList) {
+            userList.innerHTML = `
+                <div style="
+                    text-align:center;
+                    padding:20px;
+                    color:#777;
+                ">
+                    No users online
+                </div>
+            `;
+        }
+
+        // Clear selected-user display if it exists
+        const selectedUserElement =
+            document.getElementById("selectedUser");
+
+        if (selectedUserElement) {
+            selectedUserElement.textContent =
+                "No user selected";
+        }
+
+        alert("User list reset successfully.");
+
+    } catch (error) {
+
+        console.error("Reset User List Error:", error);
+
+        alert(
+            "Could not reset user list.\n\n" +
+            error.message
+        );
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "🗑 Reset User List";
+    }
+}
+
+/* =========================================
+   PAGE CLOSE
+========================================= */
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        if(
+            selectedUser
+        ){
+
+            db.ref(
+                "calls/" +
+                selectedUser
+            ).remove();
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>
