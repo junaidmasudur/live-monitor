@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#eef2f7;}
+.header{
+background:#1f2937;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+.header button{background:#dc2626;}
+.main{
+display:flex;
+height:calc(100vh - 60px);
+}
+.left{
+width:30%;
+background:white;
+padding:15px;
+overflow:auto;
+}
+.right{
+flex:1;
+padding:20px;
+}
+.user{
+padding:12px;
+margin:8px 0;
+border-radius:8px;
+cursor:pointer;
+background:#e5e7eb;
+}
+.user.active{
+background:#2563eb;
+color:white;
+}
+video{
+width:100%;
+max-width:800px;
+background:black;
+border-radius:10px;
+}
+button{
+padding:12px 18px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+
+<h2>ADMIN PANEL</h2>
+
+<div>
+<span id="firebaseStatus">🔴 Disconnected</span>
+<button onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<div class="main">
+
+<div class="left">
+
+<h3>Users</h3>
+
+<div id="userList"></div>
+
+</div>
+
+<div class="right">
+
+<h2 id="selected">No User Selected</h2>
+
+<video id="remoteVideo" autoplay playsinline></video>
+
+<br><br>
+
+<button onclick="connectUser()">Start Connection</button>
+
+<p id="connectionStatus">Waiting...</p>
+
+</div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+
+let selectedUser=null;
+let pc;
+
+firebase.database().ref(".info/connected").on("value",snap=>{
+
+firebaseStatus.innerHTML=snap.val()
+?"🟢 Firebase Connected"
+:"🔴 Firebase Disconnected";
+
+});
+
+db.ref("users").on("value",snapshot=>{
+
+userList.innerHTML="";
+
+snapshot.forEach(child=>{
+
+const id=child.key;
+const u=child.val();
+
+const div=document.createElement("div");
+
+div.className="user";
+div.id=id;
+
+div.innerHTML=`
+<b>${u.status==="connected"?"🟢":"🔴"} ${u.name}</b><br>
+<small>
+Camera: ${u.camera?"✅ Allowed":"❌ Not Allowed"}<br>
+Microphone: ${u.microphone?"✅ Allowed":"❌ Not Allowed"}
+</small>
+`;
+
+div.onclick=()=>selectUser(id,u.name);
+
+userList.appendChild(div);
+
+});
+
+});
+
+function selectUser(id,name){
+
+selectedUser=id;
+
+selected.innerHTML=name;
+
+document.querySelectorAll(".user")
+.forEach(x=>x.classList.remove("active"));
+
+document.getElementById(id).classList.add("active");
+
+}
+
+async function connectUser(){
+
+if(!selectedUser){
+
+alert("Select a user.");
+return;
+
+}
+
+connectionStatus.innerHTML="Connecting...";
+
+if(pc) pc.close();
+
+await db.ref("calls/"+selectedUser+"/offerCandidates").remove();
+await db.ref("calls/"+selectedUser+"/answerCandidates").remove();
+await db.ref("calls/"+selectedUser+"/answer").remove();
+
+pc=new RTCPeerConnection({
+
+iceServers: [
+  {
+    urls: "stun:stun.l.google.com:19302"
+  },
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  }
+]
+
+});
+
+// Receive only
+pc.addTransceiver("video",{direction:"recvonly"});
+pc.addTransceiver("audio",{direction:"recvonly"});
+
+pc.ontrack=e=>{
+
+remoteVideo.srcObject=e.streams[0];
+
+connectionStatus.innerHTML=
+"🟢 Live Video + Audio Connected";
+
+};
+
+pc.onicecandidate=e=>{
+
+if(e.candidate){
+
+db.ref("calls/"+selectedUser+"/offerCandidates")
+.push(e.candidate.toJSON());
+
+}
+
+};
+
+const offer=await pc.createOffer();
+
+await pc.setLocalDescription(offer);
+
+await db.ref("calls/"+selectedUser).update({
+
+offer:offer.toJSON()
+
+});
+
+db.ref("calls/"+selectedUser+"/answer")
+.on("value",async snap=>{
+
+const answer=snap.val();
+
+if(answer && !pc.currentRemoteDescription){
+
+await pc.setRemoteDescription(
+new RTCSessionDescription(answer)
+);
+
+}
+
+});
+
+db.ref("calls/"+selectedUser+"/answerCandidates")
+.on("child_added",snap=>{
+
+if(pc){
+
+pc.addIceCandidate(
+new RTCIceCandidate(snap.val())
+);
+
+}
+
+});
+
+}
+
+function logout(){
+
+if(pc) pc.close();
+
+location.href="index.html";
+
+}
+
+</script>
+
+</body>
+</html>

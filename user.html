@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>User Panel</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#f4f6f8;}
+.header{
+background:#2563eb;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+.header button{background:#dc2626;}
+.card{
+margin:20px;
+padding:20px;
+background:white;
+border-radius:12px;
+box-shadow:0 3px 10px rgba(0,0,0,.1);
+}
+video{
+width:100%;
+max-width:500px;
+background:black;
+border-radius:10px;
+}
+button{
+padding:12px 18px;
+background:#16a34a;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+
+<div>
+<b>User:</b> <span id="userName"></span>
+</div>
+
+<div>
+<span id="firebaseStatus">🔴 Disconnected</span>
+<button onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Camera & Microphone</h2>
+
+<video id="localVideo" autoplay muted playsinline></video>
+
+<br><br>
+
+<button onclick="enableMedia()">Allow Camera & Mic</button>
+
+<p id="mediaStatus">Waiting for permission...</p>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+
+const name=localStorage.getItem("userName");
+
+if(!name) location.href="login.html";
+
+userName.textContent=name;
+
+let userId=localStorage.getItem("userId");
+
+if(!userId){
+
+userId="user_"+Date.now();
+localStorage.setItem("userId",userId);
+
+}
+
+const userRef=db.ref("users/"+userId);
+
+let localStream;
+let pc;
+
+firebase.database().ref(".info/connected").on("value",snap=>{
+
+firebaseStatus.innerHTML=snap.val()
+?"🟢 Firebase Connected"
+:"🔴 Firebase Disconnected";
+
+});
+
+userRef.update({
+
+name:name,
+status:"connected",
+camera:false,
+microphone:false
+
+});
+
+userRef.onDisconnect().update({
+
+status:"disconnected",
+camera:false,
+microphone:false
+
+});
+
+async function enableMedia(){
+
+try{
+
+localStream=await navigator.mediaDevices.getUserMedia({
+
+video:true,
+audio:true
+
+});
+
+localVideo.srcObject=localStream;
+
+userRef.update({
+
+camera:true,
+microphone:true
+
+});
+
+mediaStatus.innerHTML="Camera & Microphone ON";
+
+listenForCall();
+
+}catch(e){
+
+alert("Permission denied.");
+
+}
+
+}
+
+function listenForCall(){
+
+db.ref("calls/"+userId).on("value",async snap=>{
+
+const call=snap.val();
+
+if(!call || !call.offer || !localStream) return;
+
+if(pc) pc.close();
+
+pc=new RTCPeerConnection({
+
+iceServers: [
+  {
+    urls: "stun:stun.l.google.com:19302"
+  },
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  }
+]
+
+});
+
+localStream.getTracks().forEach(track=>{
+
+pc.addTrack(track,localStream);
+
+});
+
+pc.onicecandidate=e=>{
+
+if(e.candidate){
+
+db.ref("calls/"+userId+"/answerCandidates")
+.push(e.candidate.toJSON());
+
+}
+
+};
+
+await pc.setRemoteDescription(
+new RTCSessionDescription(call.offer)
+);
+
+const answer=await pc.createAnswer();
+
+await pc.setLocalDescription(answer);
+
+await db.ref("calls/"+userId).update({
+
+answer:answer.toJSON()
+
+});
+
+db.ref("calls/"+userId+"/offerCandidates")
+.on("child_added",snap=>{
+
+pc.addIceCandidate(
+new RTCIceCandidate(snap.val())
+);
+
+});
+
+});
+
+}
+
+function logout(){
+
+if(localStream)
+localStream.getTracks().forEach(t=>t.stop());
+
+if(pc) pc.close();
+
+userRef.update({
+
+status:"disconnected",
+camera:false,
+microphone:false
+
+});
+
+db.ref("calls/"+userId).remove();
+
+localStorage.clear();
+
+location.href="index.html";
+
+}
+
+window.addEventListener("beforeunload",()=>{
+
+userRef.update({
+
+status:"disconnected",
+camera:false,
+microphone:false
+
+});
+
+});
+
+</script>
+
+</body>
+</html>
