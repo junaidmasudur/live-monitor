@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Monitor Login</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #2563eb;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 380px;
+      padding: 30px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2563eb;
+      color: white;
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      color: #111827;
+    }
+
+    .subtitle {
+      margin: 8px 0 25px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    h3 {
+      margin: 20px 0 10px;
+      color: #1f2937;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border: 0;
+      border-radius: 8px;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .admin-btn {
+      background: #111827;
+    }
+
+    .user-btn {
+      background: #2563eb;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .divider {
+      margin: 25px 0;
+      text-align: center;
+      color: #9ca3af;
+    }
+
+    .error {
+      display: none;
+      margin-top: 5px;
+      color: #dc2626;
+      font-size: 13px;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 10px;
+      text-align: center;
+      background: #f3f4f6;
+      border-radius: 8px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+
+    <div class="logo">LM</div>
+
+    <h1>Live Monitor</h1>
+
+    <div class="subtitle">
+      Camera & Microphone Monitoring System
+    </div>
+
+    <!-- Admin Login -->
+    <h3>Admin Login</h3>
+
+    <input
+      type="text"
+      id="aid"
+      placeholder="Admin ID"
+      autocomplete="username"
+    >
+
+    <input
+      type="password"
+      id="apass"
+      placeholder="Password"
+      autocomplete="current-password"
+    >
+
+    <div id="adminError" class="error"></div>
+
+    <button class="admin-btn" onclick="adminLogin()">
+      Login as Admin
+    </button>
+
+    <div class="divider">OR</div>
+
+    <!-- User Login -->
+    <h3>User Login</h3>
+
+    <input
+      type="text"
+      id="uname"
+      placeholder="Enter your name"
+      autocomplete="name"
+    >
+
+    <div id="userError" class="error"></div>
+
+    <button class="user-btn" onclick="userLogin()">
+      Enter as User
+    </button>
+
+    <div id="status" class="status">
+      Ready to login
+    </div>
+
+  </div>
+
+  <script>
+    function adminLogin() {
+      const id = document.getElementById("aid").value.trim();
+      const password = document.getElementById("apass").value;
+      const error = document.getElementById("adminError");
+
+      error.style.display = "none";
+
+      if (!id) {
+        showError(error, "Please enter Admin ID.");
+        return;
+      }
+
+      if (!password) {
+        showError(error, "Please enter password.");
+        return;
+      }
+
+      // Demo admin credentials
+      if (id === "ad" && password === "ad") {
+
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userId");
+
+        localStorage.setItem("adminLoggedIn", "true");
+
+        document.getElementById("status").textContent =
+          "Opening Admin Panel...";
+
+        window.location.href = "admin.html";
+
+      } else {
+        showError(error, "Wrong Admin ID or password.");
+      }
+    }
+
+    function userLogin() {
+      const name = document.getElementById("uname").value.trim();
+      const error = document.getElementById("userError");
+
+      error.style.display = "none";
+
+      if (!name) {
+        showError(error, "Please enter your name.");
+        return;
+      }
+
+      if (name.length < 2) {
+        showError(error, "Name must contain at least 2 characters.");
+        return;
+      }
+
+      localStorage.removeItem("adminLoggedIn");
+
+      localStorage.setItem("userName", name);
+
+      const userId =
+        "user_" +
+        Date.now() +
+        "_" +
+        Math.random().toString(36).substring(2, 10);
+
+      localStorage.setItem("userId", userId);
+
+      document.getElementById("status").textContent =
+        "Opening User Panel...";
+
+      window.location.href = "user.html";
+    }
+
+    function showError(element, message) {
+      element.textContent = message;
+      element.style.display = "block";
+    }
+
+    // Press Enter to login
+    document.getElementById("aid").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") adminLogin();
+    });
+
+    document.getElementById("apass").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") adminLogin();
+    });
+
+    document.getElementById("uname").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") userLogin();
+    });
+  </script>
+
+</body>
+</html>
